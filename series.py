@@ -34,16 +34,18 @@ class Series(Scene):
         elementlabels = []
         lengthlabel = MathTex()
         brace = Brace(lengthlabel)
+
         def flockenanimation(startline):
             nonlocal index
             nonlocal lengthlabel
             nonlocal brace
+            nonlocal elementlabels
             if index == 0:
                 brace = Brace(startline)
                 lengthlabel = MathTex(r'L_0').next_to(brace, DOWN)
                 self.play(Write(VGroup(brace, lengthlabel)))
             else:
-                text = MathTex(r'L_{' + str(index) + r'} = L_{' + str(index-1) + r'} * {{ \frac{4}{3} }}').scale(.7).align_on_border(UP + LEFT).shift((index-1)*DOWN)
+                text = MathTex(r'L_{' + str(index) + r'} = L_{' + str(index - 1) + r'} * {{ \frac{4}{3} }}').scale(.7).align_on_border(UP + LEFT).shift((index - 1) * DOWN)
                 text.submobjects[1].color = RED
                 elementlabels.append(text)
                 self.play(Write(text))
@@ -55,22 +57,30 @@ class Series(Scene):
             lines = [line]
             currentdepth = depth
 
-            animationBorder = 4
+            animationBorder = 3
 
             totalGroup = VGroup(Line(start=line[0][0] * RIGHT + line[0][1] * UP, end=line[1][0] * RIGHT + line[1][1] * UP))
             startline = totalGroup.submobjects[0]
 
+            iterationLabel = Text("Iteration 1").shift(2 * UP)
+
+            self.play(Write(iterationLabel))
+
             while currentdepth >= 0:
+                animationIndex = depth - currentdepth
                 newlines = []
                 lineIndex = 0
 
                 newTotalGroup = VGroup()
 
-                animationIndex = depth - currentdepth
                 if animation:
                     flockenanimation(startline)
 
+                self.play(Transform(iterationLabel, Text("Iteration " + str(animationIndex + 1)).shift(2 * UP)))
+
                 for line in lines:
+                    print(animationIndex)
+                    print("lineindex: " + str(lines.index(line)))
                     dy = line[1][1] - line[0][1]
                     dx = line[1][0] - line[0][0]
                     distance = math.sqrt(pow(dx, 2) + pow(dy, 2))
@@ -127,29 +137,36 @@ class Series(Scene):
 
                 if depth - currentdepth >= animationBorder:
                     self.add(newTotalGroup)
-                    self.wait()
 
                 totalGroup = newTotalGroup
                 if animationIndex == depth:
+                    totalGroup.add(iterationLabel)
                     return VGroup(*totalGroup)
 
                 lines = newlines
+
                 currentdepth -= 1
-                print(currentdepth)
 
+        print("flocke1 to begin")
         self.play(Unwrite(flocke([[-6, -2], [6, -2]], 3)))
+        print("flocke1 done")
         flocke = flocke([[-6, -2], [6, -2]], 4, True)
+        print("flocke2 done")
 
-        recursiveSeries = MathTex(r'L_n = L_{n-1} * \frac{4}{3}').align_on_border(RIGHT+UP)
+        recursiveSeries = MathTex(r'L_n = L_{n-1} * \frac{4}{3}').align_on_border(RIGHT + UP)
         recursiveLabel = Text("Rekursive Schreibweise").scale(.5).next_to(recursiveSeries, DOWN).align_on_border(RIGHT)
+        self.play(Write(recursiveSeries))
         self.play(Write(recursiveLabel))
 
+        newlabels = []
         for labelI in range(len(elementlabels)):
-            newlabel = MathTex(r'=L_0 * \frac{4}{3}^' + str(labelI+1)).scale(.7).next_to(elementlabels[labelI], RIGHT)
+            newlabel = MathTex(r'=L_0 * \left(\frac{4}{3}\right)^' + str(labelI + 1)).scale(.7).next_to(elementlabels[labelI], RIGHT)
             self.play(Write(newlabel))
+            newlabels.append(newlabel)
 
-        explicitSeries = MathTex(r'L_n = L_0 * (\frac{4}{3})^n')
-        explicitLabel = Text("Explizite Schreibweise").scale(.5).next_to(recursiveLabel, DOWN).align_to(recursiveLabel, LEFT)
+        explicitSeries = MathTex(r'L_n = L_0 * \left(\frac{4}{3}\right)^n').next_to(recursiveSeries, DOWN).shift(1.1 * DOWN)
+        explicitLabel = Text("Explizite Schreibweise").scale(.5).next_to(explicitSeries, DOWN).align_on_border(RIGHT)
+        self.play(Write(explicitSeries))
         self.play(Write(explicitLabel))
-
-        self.play(Unwrite(VGroup(flocke, brace, lengthlabel)))
+        print("unwrite")
+        self.play(Unwrite(VGroup(flocke, brace, lengthlabel, recursiveSeries, recursiveLabel, explicitSeries, explicitLabel, VGroup(*newlabels), VGroup(*elementlabels))))
